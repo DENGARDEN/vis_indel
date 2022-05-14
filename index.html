@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <!-- Adapted from Bootstrap quick start: https://getbootstrap.com/docs/5.2/getting-started/introduction/ -->
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <!-- Bootstrap -->
+    <script
+      src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.5/dist/umd/popper.min.js"
+      integrity="sha384-Xe+8cL9oJa6tN/veChSP7q+mnSPaj5Bcu9mPX5F5xIGE0DVittaqT5lorf0EI7Vk"
+      crossorigin="anonymous"
+    ></script>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-0evHe/X+R7YkIZDRvuzKMRqM+OrBnVFBL6DOitfPri4tjfHxaWutUpFmBp4vmVor"
+      crossorigin="anonymous"
+    />
+
+    <!-- d3 -->
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3-legend/2.25.6/d3-legend.min.js"></script>
+
+    <!-- custom JS scripts -->
+    <script src="components/datatable.js"></script>
+    <script src="components/heatmap.js"></script>
+    <script src="components/histogram.js"></script>
+    <script src="components/linechart.js"></script>
+
+    <title>vis indel</title>
+    <style>
+      body {
+        background: #eee;
+        overflow-y: scroll;
+      }
+
+      .container {
+        width: 1080px;
+        background: white;
+      }
+
+      .brushed {
+        stroke-width: 1;
+        stroke: gray;
+        r: 5;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <!-- from Bootstrap Icons -->
+      <nav class="navbar bg-light">
+        <div class="container-fluid">
+          <span display:block>
+            <a class="navbar-brand h1">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="20"
+                height="20"
+                fill="currentColor"
+                class="bi bi-binoculars-fill"
+                viewBox="0 0 20 20"
+              >
+                <path
+                  d="M4.5 1A1.5 1.5 0 0 0 3 2.5V3h4v-.5A1.5 1.5 0 0 0 5.5 1h-1zM7 4v1h2V4h4v.882a.5.5 0 0 0 .276.447l.895.447A1.5 1.5 0 0 1 15 7.118V13H9v-1.5a.5.5 0 0 1 .146-.354l.854-.853V9.5a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5v.793l.854.853A.5.5 0 0 1 7 11.5V13H1V7.118a1.5 1.5 0 0 1 .83-1.342l.894-.447A.5.5 0 0 0 3 4.882V4h4zM1 14v.5A1.5 1.5 0 0 0 2.5 16h3A1.5 1.5 0 0 0 7 14.5V14H1zm8 0v.5a1.5 1.5 0 0 0 1.5 1.5h3a1.5 1.5 0 0 0 1.5-1.5V14H9zm4-11H9v-.5A1.5 1.5 0 0 1 10.5 1h1A1.5 1.5 0 0 1 13 2.5V3z"
+                />
+              </svg>
+              Indel Visualizer on CRISPR System
+            </a>
+          </span>
+          <a
+            class="text-end navbar-brand text-primary"
+            href="https://www.nature.com/articles/nmeth.4104"
+            >Source Data (CLICK ME!)</a
+          >
+        </div>
+      </nav>
+    </header>
+
+    <main class="container container-fluid pb-3">
+      <div class="row pt-2">
+        <div class="col-4 text-center">
+          <div id="line_pos">
+            <!-- indel frequency by mismatch position -->
+          </div>
+        </div>
+        <div class="col-4 text-center">
+          <!-- indel frequency by the number of mismatches -->
+          <div id="line_num"></div>
+        </div>
+        <div class="col-4 text-center">
+          <!-- indel frequency by the mismatch types -->
+          <div id="historgram"></div>
+        </div>
+      </div>
+
+      <div class="row pt-2">
+        <!-- attribute selector -->
+
+        <div class="col-3 text-end pe-3 fw-bold font-monospace">Factor #1:</div>
+        <div class="col-9">
+          <div class="form-check form-check-inline">
+            <input
+              class="form-check-input"
+              type="radio"
+              id="x_pos"
+              value="mm.pos"
+              name="x-variable-pos"
+              checked
+            />
+            <label class="form-check-label" for="x_pos"
+              >Mismatch Position</label
+            >
+          </div>
+          <div class="form-check form-check-inline">
+            <input
+              class="form-check-input"
+              type="radio"
+              id="x_num"
+              value="mm.num"
+              name="x-variable-num"
+            />
+            <label class="form-check-label" for="x_num"
+              >Number of Mismatches</label
+            >
+          </div>
+          <div class="form-check form-check-inline">
+            <input
+              class="form-check-input"
+              type="radio"
+              id="x_type"
+              value="mm.type"
+              name="x-variable-type"
+            />
+            <label class="form-check-label" for="x_type">Mutation Types</label>
+          </div>
+        </div>
+
+        <div class="col-3 text-end pe-3 fw-bold font-monospace">Factor #2:</div>
+        <div class="col-9">
+          <div class="form-check form-check-inline">
+            <input
+              class="form-check-input"
+              type="radio"
+              id="y_pos"
+              value="mm.pos"
+              name="y-variable-pos"
+            />
+            <label class="form-check-label" for="y_pos"
+              >Mismatch Position</label
+            >
+          </div>
+          <div class="form-check form-check-inline">
+            <input
+              class="form-check-input"
+              type="radio"
+              id="y_num"
+              value="mm.num"
+              name="y-variable-num"
+              checked
+            />
+            <label class="form-check-label" for="y_num"
+              >Number of Mismatches</label
+            >
+          </div>
+          <div class="form-check form-check-inline">
+            <input
+              class="form-check-input"
+              type="radio"
+              id="y_type"
+              value="mm.type"
+              name="y-variable-type"
+            />
+            <label class="form-check-label" for="y_type">Mutation Types</label>
+          </div>
+        </div>
+      </div>
+
+      <div class="row pt-2">
+        <div id="heatmap">
+          <!-- heatmap (with tooltip interaction) -->
+        </div>
+      </div>
+      <div class="row pt-2">
+        <table class="table table-hober table-striped table-sm">
+          <!-- DOD (details on demand), raw data table -->
+          <thead>
+            <tr>
+              <th class="text-center align-middle">Guide sequence (5' to 3')</th>
+              <th class="text-center align-middle">
+                Synthetic target sequence  (5' to 3')
+              </th>
+              <th class="text-center align-middle">PAM</th>
+              <th class="text-center align-middle">Target sequence (5' to 3')</th>
+              <th class="text-center align-middle">Indel frequency (%)</th>
+              <th class="text-center align-middle">Mismatch position</th>
+              <th class="text-center align-middle">
+                Number of mismatched bases (bp)
+              </th>
+              <th class="text-center align-middle">Mutation type</th>
+            </tr>
+          </thead>
+          <tbody id="rawdata">
+            <!-- dynamically added -->
+          </tbody>
+        </table>
+      </div>
+    </main>
+
+    <script>
+      // bridging functions
+      let data,
+        brushedData,
+        lineChartPos,
+        lineChartNum,
+        histogram,
+        heatmap,
+        dataTable;
+
+      let PosPooledData = {};
+      let TypePooledData = {};
+
+      function updateLineChartPos() {
+        lineChartPos.update(
+          brushedData && brushedData.length > 0 ? brushedData : data,
+          "Mismatch position"
+        );
+      }
+      function updateLineChartNum() {
+        lineChartNum.update(
+          brushedData && brushedData.length > 0 ? brushedData : data,
+          "Mismatch position"
+        );
+      }
+
+      d3.csv(
+        "https://raw.githubusercontent.com/DENGARDEN/vis_indel/main/dataset.csv"
+      ).then((csvData) => {
+        //  main functionalities are here
+        csvData.forEach((d) => {
+          // data preprocessing
+          d["Indel frequency (%)"] = +d["Indel frequency (%)"]; // only Q value
+
+            d["Mismatch position"].split(",")
+        });
+
+        data = csvData;
+
+        // Initialize visualizations
+        lineChartPos = new LineChart("#line_pos", data);
+        lineChartNum = new LineChart("#line_num", data);
+
+        lineChartPos.initialize();
+        lineChartNum.initialize();
+
+        updateLineChartPos();
+        updateLineChartNum();
+      });
+    </script>
+
+    <script
+      src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/js/bootstrap.bundle.min.js"
+      integrity="sha384-pprn3073KE6tl6bjs2QrFaJGz5/SUsLqktiwsUTF55Jfv3qYSDhgCecCxMW52nD2"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.5/dist/umd/popper.min.js"
+      integrity="sha384-Xe+8cL9oJa6tN/veChSP7q+mnSPaj5Bcu9mPX5F5xIGE0DVittaqT5lorf0EI7Vk"
+      crossorigin="anonymous"
+    ></script>
+  </body>
+</html>
