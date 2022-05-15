@@ -28,7 +28,7 @@
     <script src="components/histogram.js"></script>
     <script src="components/linechart.js"></script>
 
-    <title>vis indel</title>
+    <title>Vis Indel</title>
     <style>
       body {
         background: #eee;
@@ -36,7 +36,7 @@
       }
 
       .container {
-        width: 1080px;
+        width: 800px;
         background: white;
       }
 
@@ -45,8 +45,15 @@
         stroke: gray;
         r: 5;
       }
+
+      .hor-scrollable {
+        overflow: auto;
+        white-space: nowrap;
+        display: inline-block;
+      }
     </style>
   </head>
+
   <body>
     <header>
       <!-- from Bootstrap Icons -->
@@ -79,25 +86,26 @@
     </header>
 
     <main class="container container-fluid pb-3">
-      <div class="row pt-2">
-        <div class="col-4 text-center">
-          <div id="line_pos">
-            <!-- indel frequency by mismatch position -->
-          </div>
-        </div>
-        <div class="col-4 text-center">
-          <!-- indel frequency by the number of mismatches -->
-          <div id="line_num"></div>
-        </div>
-        <div class="col-4 text-center">
-          <!-- indel frequency by the mismatch types -->
-          <div id="historgram"></div>
-        </div>
+      <div class="text-center">
+        <svg width="400" height="400" id="line_pos">
+          <!-- indel frequency by mismatch position -->
+        </svg>
       </div>
 
-      <div class="row pt-2">
-        <!-- attribute selector -->
+      <div class="text-center">
+        <svg width="400" height="400" id="line_num">
+          <!-- indel frequency by the number of mismatches -->
+        </svg>
+      </div>
 
+      <div class="text-center">
+        <svg width="400" height="400" id="histogram">
+          <!-- indel frequency by the mismatch types -->
+        </svg>
+      </div>
+
+      <!-- attribute selector -->
+      <div class="row">
         <div class="col-3 text-end pe-3 fw-bold font-monospace">Factor #1:</div>
         <div class="col-9">
           <div class="form-check form-check-inline">
@@ -105,8 +113,8 @@
               class="form-check-input"
               type="radio"
               id="x_pos"
-              value="mm.pos"
               name="x-variable-pos"
+              value="Mismatch position"
               checked
             />
             <label class="form-check-label" for="x_pos"
@@ -118,7 +126,7 @@
               class="form-check-input"
               type="radio"
               id="x_num"
-              value="mm.num"
+              value="Number of mismatched bases (bp)"
               name="x-variable-num"
             />
             <label class="form-check-label" for="x_num"
@@ -130,13 +138,14 @@
               class="form-check-input"
               type="radio"
               id="x_type"
-              value="mm.type"
+              value="Mutation type"
               name="x-variable-type"
             />
             <label class="form-check-label" for="x_type">Mutation Types</label>
           </div>
         </div>
-
+      </div>
+      <div class="row">
         <div class="col-3 text-end pe-3 fw-bold font-monospace">Factor #2:</div>
         <div class="col-9">
           <div class="form-check form-check-inline">
@@ -144,7 +153,7 @@
               class="form-check-input"
               type="radio"
               id="y_pos"
-              value="mm.pos"
+              value="Mismatch position"
               name="y-variable-pos"
             />
             <label class="form-check-label" for="y_pos"
@@ -156,7 +165,7 @@
               class="form-check-input"
               type="radio"
               id="y_num"
-              value="mm.num"
+              value="Number of mismatched bases (bp)"
               name="y-variable-num"
               checked
             />
@@ -169,7 +178,7 @@
               class="form-check-input"
               type="radio"
               id="y_type"
-              value="mm.type"
+              value="Mutation type"
               name="y-variable-type"
             />
             <label class="form-check-label" for="y_type">Mutation Types</label>
@@ -177,35 +186,34 @@
         </div>
       </div>
 
-      <div class="row pt-2">
-        <div id="heatmap">
+      <div class="text-center">
+        <svg width="400" height="400" id="heatmap">
           <!-- heatmap (with tooltip interaction) -->
-        </div>
+        </svg>
       </div>
-      <div class="row pt-2">
-        <table class="table table-hober table-striped table-sm">
-          <!-- DOD (details on demand), raw data table -->
-          <thead>
-            <tr>
-              <th class="text-center align-middle">Guide sequence (5' to 3')</th>
-              <th class="text-center align-middle">
-                Synthetic target sequence  (5' to 3')
-              </th>
-              <th class="text-center align-middle">PAM</th>
-              <th class="text-center align-middle">Target sequence (5' to 3')</th>
-              <th class="text-center align-middle">Indel frequency (%)</th>
-              <th class="text-center align-middle">Mismatch position</th>
-              <th class="text-center align-middle">
-                Number of mismatched bases (bp)
-              </th>
-              <th class="text-center align-middle">Mutation type</th>
-            </tr>
-          </thead>
-          <tbody id="rawdata">
-            <!-- dynamically added -->
-          </tbody>
-        </table>
-      </div>
+
+      <table class="table table-hober table-striped table-sm hor-scrollable">
+        <!-- DOD (details on demand), raw data table -->
+        <thead>
+          <tr>
+            <th class="text-center align-middle">Guide sequence (5' to 3')</th>
+            <th class="text-center align-middle">
+              Synthetic target sequence (5' to 3')
+            </th>
+            <th class="text-center align-middle">PAM</th>
+            <th class="text-center align-middle">Target sequence (5' to 3')</th>
+            <th class="text-center align-middle">Indel frequency (%)</th>
+            <th class="text-center align-middle">Mismatch position</th>
+            <th class="text-center align-middle">
+              Number of mismatched bases (bp)
+            </th>
+            <th class="text-center align-middle">Mutation type</th>
+          </tr>
+        </thead>
+        <tbody id="rawdata">
+          <!-- dynamically added -->
+        </tbody>
+      </table>
     </main>
 
     <script>
@@ -218,19 +226,56 @@
         heatmap,
         dataTable;
 
-      let PosPooledData = {};
-      let TypePooledData = {};
-
       function updateLineChartPos() {
-        lineChartPos.update(
-          brushedData && brushedData.length > 0 ? brushedData : data,
-          "Mismatch position"
-        );
+        let posPooledData = [];
+
+        // Separating data
+        src = brushedData && brushedData.length > 0 ? brushedData : data;
+        src.forEach((d) => {
+          d["Mismatch position"].split(",").forEach((pos) => {
+            // Separating multiple occurrences
+            if (pos !== "") {
+              temp = { ...d };
+              temp["Mismatch position"] = pos;
+              posPooledData.push(temp);
+            }
+          });
+        });
+
+        lineChartPos.update(posPooledData, "Mismatch position");
       }
+
       function updateLineChartNum() {
         lineChartNum.update(
           brushedData && brushedData.length > 0 ? brushedData : data,
-          "Mismatch position"
+          "Number of mismatched bases (bp)"
+        );
+      }
+
+      function updateHistogram() {
+        let typePooledData = [];
+
+        // Separating data
+        src = brushedData && brushedData.length > 0 ? brushedData : data;
+        src.forEach((d) => {
+          d["Mutation type"].split(",").forEach((type) => {
+            // Separating multiple occurrences
+            if (type !== "") {
+              temp = { ...d };
+              temp["Mutation type"] = type;
+              typePooledData.push(temp);
+            }
+          });
+        });
+        histogram.update(typePooledData, "Mutation type");
+      }
+
+      function updateHeatmap() {}
+
+      function updateDataTable() {
+        dataTable.update(
+          brushedData && brushedData.length > 0 ? brushedData : data,
+          data.columns
         );
       }
 
@@ -239,23 +284,36 @@
       ).then((csvData) => {
         //  main functionalities are here
         csvData.forEach((d) => {
-          // data preprocessing
           d["Indel frequency (%)"] = +d["Indel frequency (%)"]; // only Q value
-
-            d["Mismatch position"].split(",")
         });
 
         data = csvData;
 
         // Initialize visualizations
-        lineChartPos = new LineChart("#line_pos", data);
-        lineChartNum = new LineChart("#line_num", data);
+        // heatmap
+
+        // brush interaction, event binding
+
+        // Linked visualizations
+        // line charts
+        lineChartPos = new LineChart("#line_pos");
+        lineChartNum = new LineChart("#line_num");
 
         lineChartPos.initialize();
         lineChartNum.initialize();
 
         updateLineChartPos();
         updateLineChartNum();
+
+        // histogram
+        histogram = new Histogram("#histogram");
+        histogram.initialize();
+        updateHistogram();
+        // raw data table
+
+        dataTable = new DataTable("#rawdata");
+
+        updateDataTable();
       });
     </script>
 
