@@ -1,6 +1,7 @@
 // Credits
 // https://github.com/e-/infovis
 // https://d3-graph-gallery.com/graph/heatmap_tooltip.html
+// https://stackoverflow.com/questions/70790223/how-to-sum-the-array-of-object-values-and-assigned-them-to-the-relevant-key-name
 class Heatmap {
   margin = {
     top: 30,
@@ -58,45 +59,60 @@ class Heatmap {
     this.xVar = xVar;
     this.yVar = yVar;
     this.colorVar = colorVar;
-    const categoriesX = [...new Set(data.map((d) => d[xVar]))].sort(
-      (a, b) => a - b
-    );
-    const categoriesY = [...new Set(data.map((d) => d[yVar]))].sort(
-      (a, b) => a - b
-    );
 
     //   TODO
-    // //   Data Pooling
-    // let temp = [];
-    // let dX = [];
-    // data.forEach((d) => {
-    //   d[xVar].split(",").forEach((type) => {
-    //     // Separating multiple occurrences
-    //     if (type !== "") {
-    //       temp = { ...d };
-    //       temp[xVar] = type;
-    //       dX.push(temp);
-    //     }
-    //   });
-    // });
-    // temp = [];
-    // let dY = [];
+    //   Data Pooling
+    let temp = [];
+    let dPooled = [];
+    data.forEach((d) => {
+      d[xVar].split(",").forEach((f1) => {
+        d[yVar].split(",").forEach((f2) => {
+          // Separating multiple occurrences
+          if (f1 !== "" && f2 !== "") {
+            temp = { ...d };
+            temp[xVar] = f1;
+            temp[yVar] = f2;
+            dPooled.push(temp);
+          }
+        });
+      });
+    });
 
-    // data.forEach((d) => {
-    //   d[yVar].split(",").forEach((type) => {
-    //     // Separating multiple occurrences
-    //     if (type !== "") {
-    //       temp = { ...d };
-    //       temp[yVar] = type;
-    //       dY.push(temp);
-    //     }
-    //   });
-    // });
+    let originalData = this.data;
+    this.data = dPooled;
+
+    const categoriesX = [...new Set(this.data.map((d) => d[xVar]))].sort(
+      (a, b) => a - b
+    );
+    const categoriesY = [...new Set(this.data.map((d) => d[yVar]))].sort(
+      (a, b) => a - b
+    );
+
+    const categories_id = [...new Set(this.data.map((d) => d["id"]))].sort(
+      (a, b) => a - b
+    );
+
+    //   Averaging Q values
+    const freqGroupById = {};
+    const countGroupById = {};
+    this.data.forEach((d) => {
+      if (!freqGroupById[d["id"]]) {
+        freqGroupById[d["id"]] = 0;
+        countGroupById[d["id"]] = 0;
+      }
+      freqGroupById[d["id"]] += d[this.colorVar];
+      countGroupById[d["id"]] += 1;
+    });
+    // averaging op은 heatmap pos 에 대해 수행해야 험
+    Object.keys(freqGroupById).forEach((key) => {
+      freqGroupById[key] /= countGroupById[key];
+    });
 
     this.xScale.domain(categoriesX).range([0, this.width]).padding(0.01);
     this.yScale.domain(categoriesY).range([this.height, 0]).padding(0.01);
 
     //   Build color scale
+
     this.zScale
       .range(["white", "steelblue"])
       .domain(d3.extent(this.data, (d) => d[colorVar]));
