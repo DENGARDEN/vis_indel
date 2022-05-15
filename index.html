@@ -113,7 +113,7 @@
               class="form-check-input"
               type="radio"
               id="x_pos"
-              name="x-variable-pos"
+              name="x-var"
               value="Mismatch position"
               checked
             />
@@ -127,7 +127,7 @@
               type="radio"
               id="x_num"
               value="Number of mismatched bases (bp)"
-              name="x-variable-num"
+              name="x-var"
             />
             <label class="form-check-label" for="x_num"
               >Number of Mismatches</label
@@ -139,7 +139,7 @@
               type="radio"
               id="x_type"
               value="Mutation type"
-              name="x-variable-type"
+              name="x-var"
             />
             <label class="form-check-label" for="x_type">Mutation Types</label>
           </div>
@@ -154,7 +154,7 @@
               type="radio"
               id="y_pos"
               value="Mismatch position"
-              name="y-variable-pos"
+              name="y-var"
             />
             <label class="form-check-label" for="y_pos"
               >Mismatch Position</label
@@ -166,7 +166,7 @@
               type="radio"
               id="y_num"
               value="Number of mismatched bases (bp)"
-              name="y-variable-num"
+              name="y-var"
               checked
             />
             <label class="form-check-label" for="y_num"
@@ -179,7 +179,7 @@
               type="radio"
               id="y_type"
               value="Mutation type"
-              name="y-variable-type"
+              name="y-var"
             />
             <label class="form-check-label" for="y_type">Mutation Types</label>
           </div>
@@ -190,6 +190,14 @@
         <svg width="400" height="400" id="heatmap">
           <!-- heatmap (with tooltip interaction) -->
         </svg>
+        <div
+          class="tooltip bs-tooltip-top show"
+          id="sc-tooltip"
+          role="tooltip"
+          style="display: none"
+        >
+          <div class="tooltip-arrow"></div>
+          <div class="tooltip-inner">Some tooltip text!</div>
       </div>
 
       <table class="table table-hober table-striped table-sm hor-scrollable">
@@ -270,7 +278,17 @@
         histogram.update(typePooledData, "Mutation type");
       }
 
-      function updateHeatmap() {}
+      function updateHeatmap() {
+        let xVar = d3
+          .select("input[type=radio][name=x-var]:checked")
+          .property("value");
+        let yVar = d3
+          .select("input[type=radio][name=y-var]:checked")
+          .property("value");
+        
+        heatmap.update(xVar, yVar, "Indel frequency (%)", data);
+
+      }
 
       function updateDataTable() {
         dataTable.update(
@@ -291,9 +309,29 @@
 
         // Initialize visualizations
         // heatmap
+        heatmap = new Heatmap("#heatmap", "#sc-tooltip", data)
+        heatmap.initialize()
 
-        // brush interaction, event binding
-
+        updateHeatmap();
+        // event binding, brush interaction
+        d3.selectAll("input[type=radio][name=x-var]").on(
+            "change",
+            updateHeatmap
+          );
+          
+        d3.selectAll("input[type=radio][name=y-var]").on(
+            "change",
+            updateHeatmap
+        );
+          
+        heatmap.on("brush", (brushedItems) => {
+        brushedData = brushedItems;
+        updateHistogram();
+        updateLineChartPos();
+        updateLineChartNum();
+        updateDataTable();
+        });
+        
         // Linked visualizations
         // line charts
         lineChartPos = new LineChart("#line_pos");
