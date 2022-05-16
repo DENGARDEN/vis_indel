@@ -5,7 +5,6 @@
 // https://observablehq.com/@d3/color-legend
 // https://observablehq.com/@slowkow/vertical-color-legend
 
-
 class Heatmap {
   margin = {
     top: 30,
@@ -31,6 +30,8 @@ class Heatmap {
     this.svg = d3.select(this.svg);
     this.tooltip = d3.select(this.tooltip);
     this.container = this.svg.append("g");
+    this.anotherContainer = this.svg.append("g");
+
     this.xAxis = this.svg.append("g");
     this.yAxis = this.svg.append("g");
     this.legend = this.svg
@@ -62,6 +63,11 @@ class Heatmap {
       .attr("height", this.height + this.margin.top + this.margin.bottom);
 
     this.container.attr(
+      "transform",
+      `translate(${this.margin.left}, ${this.margin.top})`
+    );
+
+    this.anotherContainer.attr(
       "transform",
       `translate(${this.margin.left}, ${this.margin.top})`
     );
@@ -103,7 +109,7 @@ class Heatmap {
       });
     });
 
-    let originalData = this.data;
+    this.originalData = this.data;
     this.data = dPooled;
 
     const categoriesX = [...new Set(this.data.map((d) => d[xVar]))].sort(
@@ -204,7 +210,7 @@ class Heatmap {
       .attr("transform", `translate(${this.width}, ${0})`);
 
     // brush first
-    this.container.call(this.brush);
+    this.anotherContainer.call(this.brush);
 
     //   Add the squares
     //   data -> this.data
@@ -273,8 +279,8 @@ class Heatmap {
   // Brushing interaction
   isBrushed(d, selection) {
     let [[x0, y0], [x1, y1]] = selection; // destructuring assignment
-    let x = this.xScale(this.squares[this.xVar]);
-    let y = this.yScale(this.squares[this.yVar]);
+    let x = this.xScale(d[this.xVar]);
+    let y = this.yScale(d[this.yVar]);
 
     return x0 <= x && x <= x1 && y0 <= y && y <= y1;
   }
@@ -283,11 +289,19 @@ class Heatmap {
   brushSquares(event) {
     let selection = event.selection;
 
-    this.squares.classed("brushed", (d) => this.isBrushed(d, selection));
-
+    // this.squares.classed("brushed", (d) => this.isBrushed(d, selection));
+    let ids = [];
     if (this.handlers.brush)
       this.handlers.brush(
-        this.data.filter((d) => this.isBrushed(d, selection))
+        this.originalData.filter((d) => {
+          // Restore and return the original data format
+
+          this.data.forEach((c) => {
+            this.isBrushed(c, selection) ? ids.push(c["id"]) : 0;
+          });
+
+          return ids.includes(d["id"]);
+        })
       );
   }
 

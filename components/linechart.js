@@ -80,6 +80,8 @@ class LineChart {
       .range([this.height, 0]);
 
     // drawing CI
+    // remove preceding area
+    this.ciArea.selectAll("*").remove();
     // Show confidence interval
     let CI_Area = d3
       .area()
@@ -133,7 +135,7 @@ class LineChart {
       });
 
     this.circles
-      .transition()
+
       .attr("cx", (d) => this.xScale(d[xVar]))
       .attr("cy", (d) => this.yScale(means[d[xVar]]))
       .attr("r", 15)
