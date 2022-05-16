@@ -43,7 +43,7 @@
       .brushed {
         stroke-width: 1;
         stroke: gray;
-        r: 5;
+        
       }
 
       .hor-scrollable {
@@ -90,23 +90,49 @@
         <svg width="400" height="400" id="line_pos">
           <!-- indel frequency by mismatch position -->
         </svg>
+        <div
+          class="tooltip bs-tooltip-top show"
+          id="sc-tooltip_line_pos"
+          role="tooltip"
+          style="display: none"
+        >
+          <div class="tooltip-arrow"></div>
+          <div class="tooltip-inner">Some tooltip text!</div>
+      </div>
       </div>
 
       <div class="text-center">
         <svg width="400" height="400" id="line_num">
           <!-- indel frequency by the number of mismatches -->
-        </svg>
+        </svg><div
+        class="tooltip bs-tooltip-top show"
+        id="sc-tooltip_line_num"
+        role="tooltip"
+        style="display: none"
+      >
+        <div class="tooltip-arrow"></div>
+        <div class="tooltip-inner">Some tooltip text!</div>
+    </div>
       </div>
 
       <div class="text-center">
         <svg width="400" height="400" id="histogram">
           <!-- indel frequency by the mismatch types -->
         </svg>
+        <div
+          class="tooltip bs-tooltip-top show"
+          id="sc-tooltip_histogram"
+          role="tooltip"
+          style="display: none"
+        >
+          <div class="tooltip-arrow"></div>
+          <div class="tooltip-inner">Some tooltip text!</div>
+      </div>
       </div>
 
       <!-- attribute selector -->
       <div class="row">
-        <div class="col-3 text-end pe-3 fw-bold font-monospace">Factor #1:</div>
+        <div class="col-3 text-end pe-3 fw-bold font-monospace">X Variable:</div>
         <div class="col-9">
           <div class="form-check form-check-inline">
             <input
@@ -146,7 +172,7 @@
         </div>
       </div>
       <div class="row">
-        <div class="col-3 text-end pe-3 fw-bold font-monospace">Factor #2:</div>
+        <div class="col-3 text-end pe-3 fw-bold font-monospace">Y Variable:</div>
         <div class="col-9">
           <div class="form-check form-check-inline">
             <input
@@ -334,8 +360,8 @@
         
         // Linked visualizations
         // line charts
-        lineChartPos = new LineChart("#line_pos");
-        lineChartNum = new LineChart("#line_num");
+        lineChartPos = new LineChart("#line_pos", "#sc-tooltip_line_pos");
+        lineChartNum = new LineChart("#line_num", "#sc-tooltip_line_num");
 
         lineChartPos.initialize();
         lineChartNum.initialize();
@@ -344,7 +370,7 @@
         updateLineChartNum();
 
         // histogram
-        histogram = new Histogram("#histogram");
+        histogram = new Histogram("#histogram", "#sc-tooltip_histogram");
         histogram.initialize();
         updateHistogram();
         // raw data table

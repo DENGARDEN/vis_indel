@@ -2,12 +2,16 @@
 // https://github.com/e-/infovis
 // https://d3-graph-gallery.com/graph/heatmap_tooltip.html
 // https://stackoverflow.com/questions/70790223/how-to-sum-the-array-of-object-values-and-assigned-them-to-the-relevant-key-name
+// https://observablehq.com/@d3/color-legend
+// https://observablehq.com/@slowkow/vertical-color-legend
+
+
 class Heatmap {
   margin = {
     top: 30,
-    right: 30,
+    right: 180,
     bottom: 30,
-    left: 30,
+    left: 180,
   };
 
   constructor(svg, tooltip, data, width = 500, height = 500) {
@@ -21,16 +25,37 @@ class Heatmap {
   }
 
   initialize() {
+    this.spacing = 30;
+    this.coloBarWidth = 20;
+
     this.svg = d3.select(this.svg);
     this.tooltip = d3.select(this.tooltip);
     this.container = this.svg.append("g");
     this.xAxis = this.svg.append("g");
     this.yAxis = this.svg.append("g");
-    this.legend = this.svg.append("g");
+    this.legend = this.svg
+      .append("g")
+      .attr("width", 10)
+      .attr("height", this.height)
+      .attr("viewBox", [this.width, 0, this.width + 10, this.height])
+      .style("overflow", "visible")
+      .style("display", "block");
+
+    this.zAxis = this.svg.append("g");
 
     this.xScale = d3.scaleBand();
     this.yScale = d3.scaleBand();
     this.zScale = d3.scaleLinear();
+    this.zScaleForTicks = d3.scaleLinear();
+    this.zLabel = this.svg
+      .append("g")
+      .append("text")
+      .attr("x", this.margin.left + this.width - this.spacing)
+      .attr("y", this.margin.top)
+
+      .attr("fill", "currentColor")
+      .attr("text-anchor", "start")
+      .text("↑ Frequency (%)");
 
     this.svg
       .attr("width", this.width + this.margin.left + this.margin.right)
@@ -41,6 +66,8 @@ class Heatmap {
       `translate(${this.margin.left}, ${this.margin.top})`
     );
 
+    this.xLabel = this.svg.append("g");
+    this.yLabel = this.svg.append("g");
     // other initialization logic
 
     this.brush = d3
@@ -50,17 +77,15 @@ class Heatmap {
         [this.width, this.height],
       ])
       .on("start brush", (event) => {
-        this.brushCircles(event);
+        this.brushSquares(event);
       });
   }
 
-  // TODO
   update(xVar, yVar, colorVar, data) {
     this.xVar = xVar;
     this.yVar = yVar;
     this.colorVar = colorVar;
 
-    //   TODO
     //   Data Pooling
     let temp = [];
     let dPooled = [];
@@ -93,19 +118,32 @@ class Heatmap {
     );
 
     //   Averaging Q values
-    const freqGroupById = {};
-    const countGroupById = {};
+    const freqGroupByCoordinate = {};
+    const countGroupByCoordinate = {};
     this.data.forEach((d) => {
-      if (!freqGroupById[d["id"]]) {
-        freqGroupById[d["id"]] = 0;
-        countGroupById[d["id"]] = 0;
+      let x = d[this.xVar];
+      let y = d[this.yVar];
+
+      // Array as a key
+      if (!freqGroupByCoordinate[[x, y]]) {
+        freqGroupByCoordinate[[x, y]] = 0;
+        countGroupByCoordinate[[x, y]] = 0;
       }
-      freqGroupById[d["id"]] += d[this.colorVar];
-      countGroupById[d["id"]] += 1;
+      freqGroupByCoordinate[[x, y]] += d[this.colorVar];
+      countGroupByCoordinate[[x, y]] += 1;
     });
     // averaging op은 heatmap pos 에 대해 수행해야 험
-    Object.keys(freqGroupById).forEach((key) => {
-      freqGroupById[key] /= countGroupById[key];
+    categoriesX.forEach((x) =>
+      categoriesY.forEach((y) => {
+        if (countGroupByCoordinate[[x, y]]) {
+          freqGroupByCoordinate[[x, y]] /= countGroupByCoordinate[[x, y]];
+        }
+      })
+    );
+
+    //   Applying averaged value for each position on the heatmap
+    this.data.forEach((d) => {
+      d[this.colorVar] = freqGroupByCoordinate[[d[this.xVar], d[this.yVar]]];
     });
 
     this.xScale.domain(categoriesX).range([0, this.width]).padding(0.01);
@@ -116,6 +154,54 @@ class Heatmap {
     this.zScale
       .range(["white", "steelblue"])
       .domain(d3.extent(this.data, (d) => d[colorVar]));
+
+    this.zScaleForTicks
+      .domain(d3.extent(this.data, (d) => d[colorVar]))
+      .range([this.height, 0]);
+
+    // implementing color legend
+    function ramp(color, n = 256) {
+      const canvas = document.createElement("canvas");
+      canvas.width = 1;
+      canvas.height = n;
+      const context = canvas.getContext("2d");
+      for (let i = 0; i < n; ++i) {
+        context.fillStyle = color(i / (n - 1));
+        context.fillRect(0, n - i, 1, 1);
+      }
+      return canvas;
+    }
+
+    let tickAdjust = (g) =>
+      g
+        .selectAll(".tick line")
+        .attr("x1", this.margin.left - this.width + this.margin.right);
+    let x;
+
+    const n = Math.min(this.zScale.domain().length, this.zScale.range().length);
+    let y = this.zScale
+      .copy()
+      .rangeRound(
+        d3.quantize(
+          d3.interpolate(this.margin.top, this.height - this.margin.bottom),
+          n
+        )
+      );
+
+    this.legend
+      .append("image")
+      .attr("x", this.margin.left + this.spacing)
+      .attr("y", this.margin.top)
+      .attr("width", this.coloBarWidth)
+      .attr("height", this.height)
+      .attr("preserveAspectRatio", "none")
+      .attr(
+        "xlink:href",
+        ramp(
+          this.zScale.copy().domain(d3.quantize(d3.interpolate(0, 1), n))
+        ).toDataURL()
+      )
+      .attr("transform", `translate(${this.width}, ${0})`);
 
     // brush first
     this.container.call(this.brush);
@@ -172,20 +258,32 @@ class Heatmap {
       .attr("transform", `translate(${this.margin.left}, ${this.margin.top})`)
       .transition()
       .call(d3.axisLeft(this.yScale));
+
+    this.zAxis
+      .attr(
+        "transform",
+        `translate(${
+          this.margin.left + this.width + this.spacing + this.coloBarWidth
+        }, ${this.margin.top})`
+      )
+      .transition()
+      .call(d3.axisRight(this.zScaleForTicks));
   }
+
+  // Brushing interaction
   isBrushed(d, selection) {
     let [[x0, y0], [x1, y1]] = selection; // destructuring assignment
-    let x = this.xScale(d[this.xVar]);
-    let y = this.yScale(d[this.yVar]);
+    let x = this.xScale(this.squares[this.xVar]);
+    let y = this.yScale(this.squares[this.yVar]);
 
     return x0 <= x && x <= x1 && y0 <= y && y <= y1;
   }
 
   // this method will be called each time the brush is updated.
-  brushCircles(event) {
+  brushSquares(event) {
     let selection = event.selection;
 
-    this.circles.classed("brushed", (d) => this.isBrushed(d, selection));
+    this.squares.classed("brushed", (d) => this.isBrushed(d, selection));
 
     if (this.handlers.brush)
       this.handlers.brush(

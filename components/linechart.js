@@ -5,10 +5,11 @@
 class LineChart {
   margin = { top: 10, right: 10, bottom: 40, left: 40 };
 
-  constructor(svg, width = 600, height = 250) {
+  constructor(svg, tooltip, width = 600, height = 250) {
     this.svg = svg;
     this.width = width;
     this.height = height;
+    this.tooltip = tooltip;
   }
 
   initialize() {
@@ -32,6 +33,10 @@ class LineChart {
 
     this.line = this.container.append("g");
     this.ciArea = this.container.append("g");
+
+    this.tooltip = d3.select(this.tooltip);
+
+    this.circles = this.svg.append("svg");
   }
 
   update(data, xVar) {
@@ -74,7 +79,7 @@ class LineChart {
       .domain([0, d3.max(Object.values(ciRight))])
       .range([this.height, 0]);
 
-    // TODO : drawing CI
+    // drawing CI
     // Show confidence interval
     let CI_Area = d3
       .area()
@@ -83,22 +88,65 @@ class LineChart {
       .y1((d) => this.yScale(ciRight[d]));
 
     this.ciArea
-      .selectAll("path")
-      .data(categories)
-      .join("path")
+      .append("path")
+      .datum(...categories)
+      .join(
+        ((enter) => enter.append("path"),
+        (update) => update,
+        (exit) => exit.remove())
+      )
       .attr("x", (d) => this.xScale(d))
       .style("fill", "steelblue")
       .style("stroke", "none")
       .attr("d", CI_Area(categories))
-      .style("opacity", 0.04);
+      .style("opacity", 0.2);
 
     //   drawing main line
+    // plotting data points
+    this.circles = this.container
+      .selectAll("circle")
+      .data(data)
+      .join("circle")
+      .on("mouseover", (e, d) => {
+        this.tooltip
+          .select(".tooltip-inner")
+          .html(
+            `${xVar}: ${d[xVar]}<br />mean freq.: ${
+              means[d[xVar]]
+            }<br />Upper: ${ciRight[d[xVar]]}<br />Lower: ${ciLeft[d[xVar]]}`
+          );
+        Popper.createPopper(e.target, this.tooltip.node(), {
+          placement: "top",
+          modifiers: [
+            {
+              name: "arrow",
+              options: {
+                element: this.tooltip.select(".tooltip-arrow").node(),
+              },
+            },
+          ],
+        });
+        this.tooltip.style("display", "block");
+      })
+      .on("mouseout", (e) => {
+        this.tooltip.style("display", "none");
+      });
+
+    this.circles
+      .transition()
+      .attr("cx", (d) => this.xScale(d[xVar]))
+      .attr("cy", (d) => this.yScale(means[d[xVar]]))
+      .attr("r", 15)
+      .attr("fill", "currentColor")
+      .style("opacity", 0);
+
     //   callback for mean values
     let meanLine = (d) => {
       return d3.line()(
         categories.map((d) => [this.xScale(d), this.yScale(means[d])])
       );
     };
+
     this.line
       .selectAll("path")
       .data(categories)
@@ -136,7 +184,7 @@ class LineChart {
 
           .attr("fill", "currentColor")
           .attr("text-anchor", "start")
-          .text("↑ Frequency (%)")
+          .text("↑ Frequency (%) with 95% CI")
       );
   }
 }

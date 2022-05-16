@@ -11,10 +11,11 @@ class Histogram {
     left: 40,
   };
 
-  constructor(svg, width = 500, height = 250) {
+  constructor(svg, tooltip, width = 500, height = 250) {
     this.svg = svg;
     this.width = width;
     this.height = height;
+    this.tooltip = tooltip;
   }
 
   initialize() {
@@ -27,6 +28,9 @@ class Histogram {
     this.xScale = d3.scaleBand();
     this.yScale = d3.scaleLinear();
 
+    this.CIHigh = this.svg.append("g");
+    this.CILow = this.svg.append("g");
+
     this.svg
       .attr("width", this.width + this.margin.left + this.margin.right)
       .attr("height", this.height + this.margin.top + this.margin.bottom);
@@ -35,6 +39,8 @@ class Histogram {
       "transform",
       `translate(${this.margin.left}, ${this.margin.top})`
     );
+
+    this.tooltip = d3.select(this.tooltip);
   }
 
   update(data, xVar) {
@@ -72,7 +78,7 @@ class Histogram {
 
     //   mean
     this.container
-    
+
       .selectAll("rect")
       .data(categories)
       .join("rect")
@@ -80,11 +86,35 @@ class Histogram {
       .attr("y", (d) => this.yScale(means[d]))
       .attr("width", this.xScale.bandwidth())
       .attr("height", (d) => this.height - this.yScale(means[d]))
-      .attr("fill", "steelblue");
+      .attr("fill", "steelblue")
+      .on("mouseover", (e, d) => {
+        this.tooltip
+          .select(".tooltip-inner")
+          .html(
+            `${xVar}: ${d}<br />Mean Freq.: ${
+              means[d]
+            }<br />Upper: ${ciRight[d]}<br />Lower: ${ciLeft[d]}`
+          );
+        Popper.createPopper(e.target, this.tooltip.node(), {
+          placement: "top",
+          modifiers: [
+            {
+              name: "arrow",
+              options: {
+                element: this.tooltip.select(".tooltip-arrow").node(),
+              },
+            },
+          ],
+        });
+        this.tooltip.style("display", "block");
+      })
+      .on("mouseout", (e) => {
+        this.tooltip.style("display", "none");
+      });
 
     // CI
     this.container
-      .selectAll("path.vertical")
+      .selectAll("path")
       .data(categories)
       .join("path")
       .attr("stroke", "currentColor")
@@ -114,7 +144,7 @@ class Histogram {
             this.xScale(d) + this.xScale.bandwidth() / 2 + this.margin.left / 2
           }
         )}
-          
+
         `
       )
       .attr("stroke-width", 2);
@@ -138,7 +168,7 @@ class Histogram {
               this.margin.left / 2
             }
           )}
-            
+
           `
       )
       .attr("stroke-width", 2);
