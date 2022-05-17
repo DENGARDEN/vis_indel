@@ -136,16 +136,12 @@ class Histogram {
       .attr("stroke", "currentColor")
       .attr(
         "d",
-        (d) => `
-          M${
+        (d) =>
+          `M${
             this.xScale(d) + this.xScale.bandwidth() / 2 - this.margin.left / 2
-          },${this.yScale(ciRight[d])}
-          H${
+          },${this.yScale(ciRight[d])}H${
             this.xScale(d) + this.xScale.bandwidth() / 2 + this.margin.left / 2
-          }
-        )}
-
-        `
+          })}`
       )
       .attr("stroke-width", 2);
 
@@ -156,20 +152,12 @@ class Histogram {
       .attr("stroke", "currentColor")
       .attr(
         "d",
-        (d) => `
-            M${
-              this.xScale(d) +
-              this.xScale.bandwidth() / 2 -
-              this.margin.left / 2
-            },${this.yScale(ciLeft[d])}
-            H${
-              this.xScale(d) +
-              this.xScale.bandwidth() / 2 +
-              this.margin.left / 2
-            }
-          )}
-
-          `
+        (d) =>
+          `M${
+            this.xScale(d) + this.xScale.bandwidth() / 2 - this.margin.left / 2
+          },${this.yScale(ciLeft[d])}H${
+            this.xScale(d) + this.xScale.bandwidth() / 2 + this.margin.left / 2
+          })}`
       )
       .attr("stroke-width", 2);
 
