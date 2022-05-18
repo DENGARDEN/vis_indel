@@ -10,7 +10,7 @@ class Heatmap {
     top: 30,
     right: 180,
     bottom: 30,
-    left: 180,
+    left: 140,
   };
 
   constructor(svg, tooltip, data, width = 500, height = 500) {
@@ -51,7 +51,7 @@ class Heatmap {
     this.zLabel = this.svg
       .append("g")
       .append("text")
-      .attr("x", this.margin.left + this.width - this.spacing)
+      .attr("x", this.margin.left + this.width - 2 * this.spacing)
       .attr("y", this.margin.top)
 
       .attr("fill", "currentColor")
